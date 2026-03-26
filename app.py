@@ -1,38 +1,60 @@
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from groq import Groq
 
-# Create FastAPI app
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+from dotenv import load_dotenv
+
+
+## Force load .env file
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+# Create OpenAI client
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Tell FastAPI where HTML files are
-templates = Jinja2Templates(directory="templates")
 
-# Request body model
 class ChatRequest(BaseModel):
     message: str
 
-# Load UI
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request}
-    )
 
-# Chat API
+
+
+chat_history = []
+
 @app.post("/chat")
 def chat(request: ChatRequest):
-    user_message = request.message.lower()
 
-    if "hello" in user_message:
-        reply = "Hello! How can I help you?"
-    elif "java" in user_message:
-        reply = "Java is a powerful backend language."
-    elif "bye" in user_message:
-        reply = "Goodbye! Have a great day 😊"
-    else:
-        reply = "Sorry, I didn't understand that."
+    user_message = request.message
 
-    return {"response": reply}
+    try:
+        chat_history.append({"role": "user", "content": user_message})
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=chat_history
+        )
+
+        ai_reply = response.choices[0].message.content
+
+        chat_history.append({"role": "assistant", "content": "You are a helpful assistant.Give short, well-formatted answers using bullet points."})
+
+        return {"response": ai_reply}
+
+    except Exception as e:
+        print("ERROR:", e)
+        return {"response": "AI is not responding. Please try again later."}
