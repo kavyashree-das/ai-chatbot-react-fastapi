@@ -36,6 +36,10 @@ class ChatRequest(BaseModel):
 
 chat_history = []
 
+@app.get("/")
+def home():
+    return {"message": "AI Chatbot is running"}
+
 @app.post("/chat")
 def chat(request: ChatRequest):
 
