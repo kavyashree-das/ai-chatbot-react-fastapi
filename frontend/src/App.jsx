@@ -54,7 +54,7 @@ function App() {
   return (
     <div className="container">
       <div className="chat-container">
-        <h1 className="title">AI Assistant</h1>
+        <h1 className="title">PEGASUS AI</h1>
 
         <div className="messages">
           {chat.map((msg, i) => (
